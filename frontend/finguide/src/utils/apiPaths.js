@@ -31,5 +31,28 @@ export const API_PATHS = {
         ADD: "/api/v1/budget/add",
         GET: "/api/v1/budget/get",
         DELETE: (id) => `/api/v1/budget/${id}`,
-    }
+    },
+    AI: {
+        HEALTH_SCORE: "/api/v1/ai/health-score",
+        BUDGET_RECOMMENDATION: "/api/v1/ai/budget-recommendation",
+        SPENDING_ANALYSIS: "/api/v1/ai/spending-analysis",
+        EXPENSE_PREDICTION: "/api/v1/ai/expense-prediction",
+        CHAT: "/api/v1/ai/chat",
+        VOICE: "/api/v1/ai/voice",
+        MONTHLY_REPORT: "/api/v1/ai/monthly-report",
+        MONTHLY_REPORT_PDF: "/api/v1/ai/monthly-report/download",
+        RUN_ALL: "/api/v1/ai/all",
+    },
+    FINANCE: {
+        HEALTH_SCORE: "/api/v1/finance/health-score",
+    },
+    CHAT: {
+        GET_HISTORY: "/api/v1/chat/history",
+        SEND_MESSAGE: "/api/v1/chat/message",
+        CLEAR_HISTORY: "/api/v1/chat/clear",
+    },
+    PREDICTIONS: {
+        CURRENT: "/api/v1/predictions/current",
+        HISTORY: "/api/v1/predictions/history",
+    },
 };

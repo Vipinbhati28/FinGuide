@@ -13,6 +13,10 @@ import Income from "./pages/Dashboard/Income";
 import Expense from "./pages/Dashboard/Expense";
 import UserProvider from "./context/UserContext";
 import Budget from "./pages/Dashboard/Budget";
+import AIInsights from "./pages/Dashboard/AIInsights";
+import Chatbot from "./pages/Dashboard/Chatbot";
+import FinancialReport from "./pages/Dashboard/FinancialReport";
+import Predictions from "./pages/Dashboard/Predictions";
 
 const App = () => {
   return (
@@ -27,6 +31,10 @@ const App = () => {
           <Route path="/income" exact element={<Income />} />
           <Route path="/expense" exact element={<Expense />} />
           <Route path="/budget" exact element={<Budget />} />
+          <Route path="/ai-insights" exact element={<AIInsights />} />
+          <Route path="/chatbot" exact element={<Chatbot />} />
+          <Route path="/report" exact element={<FinancialReport />} />
+          <Route path="/predictions" exact element={<Predictions />} />
         </Routes>
       </Router>
     </div>

@@ -14,6 +14,7 @@ import { IoMdCard } from "react-icons/io";
 import { addThousandsSeparator } from '../../utils/helper';
 import Last30DaysExpenses from '../../components/Dashboard/Last30DaysExpenses';
 import IncomeTransactions from '../../components/Dashboard/IncomeTransactions';
+import HealthScoreWidget from '../../components/Dashboard/HealthScoreWidget';
 
 const Home = () => {
   useUserAuth();
@@ -110,6 +111,10 @@ const Home = () => {
             <Last30DaysExpenses
               data={dashboardData?.last30DaysExpenses?.transactions || []}
             />
+          </div>
+
+          <div className="xl:col-span-2">
+            <HealthScoreWidget />
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { UserContext } from "../../context/UserContext";
 import Navbar from './Navbar';
 import SideMenu from './SideMenu';
+import VoiceAssistant from '../AI/VoiceAssistant';
 
 const DashboardLayout = ({ children, activeMenu }) => {
     const { user } = useContext(UserContext);
@@ -22,6 +23,9 @@ const DashboardLayout = ({ children, activeMenu }) => {
                     </div>
                 </div>
             </div>
+
+            {/* Floating voice assistant — available on all dashboard pages */}
+            <VoiceAssistant />
         </div>
     );
 };

@@ -1,9 +1,12 @@
-import { lazy } from "react";
 import {
     LuLayoutDashboard,
     LuHandCoins,
     LuWalletMinimal,
     LuLogOut,
+    LuBrain,
+    LuMessageSquare,
+    LuFileText,
+    LuTrendingUp,
 } from "react-icons/lu";
 
 export const SIDE_MENU_DATA = [
@@ -32,7 +35,31 @@ export const SIDE_MENU_DATA = [
         path: "/budget",
     },
     {
+        id: "05",
+        label: "AI Insights",
+        icon: LuBrain,
+        path: "/ai-insights",
+    },
+    {
         id: "06",
+        label: "AI Advisor",
+        icon: LuMessageSquare,
+        path: "/chatbot",
+    },
+    {
+        id: "07",
+        label: "AI Report",
+        icon: LuFileText,
+        path: "/report",
+    },
+    {
+        id: "08",
+        label: "Predictions",
+        icon: LuTrendingUp,
+        path: "/predictions",
+    },
+    {
+        id: "09",
         label: "Logout",
         icon: LuLogOut,
         path: "logout"
