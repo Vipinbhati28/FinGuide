@@ -74,7 +74,13 @@ Return ONLY valid JSON:
   "confidenceExplanation": "<1 sentence on why confidence is ${pred.confidence}%>"
 }`;
 
-        const narrative = await gemini.generateJSON(prompt);
+        let narrative;
+        try {
+            narrative = await gemini.generateJSON(prompt);
+        } catch (geminiErr) {
+            console.error(`[PredictionAgent] Gemini failed for user ${userId}: ${geminiErr.message}`);
+            narrative = { summary: null, riskFactors: [], savingOpportunities: [], confidenceExplanation: null };
+        }
         const result = { ...pred, ...narrative };
 
         cache.set(cacheKey, result, TTL);

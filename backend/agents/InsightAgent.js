@@ -62,7 +62,13 @@ Return ONLY valid JSON:
   "recommendations": ["<recommendation 1>", "<recommendation 2>", "<recommendation 3>"]
 }`;
 
-        const result = await gemini.generateJSON(prompt);
+        let result;
+        try {
+            result = await gemini.generateJSON(prompt);
+        } catch (geminiErr) {
+            console.error(`[InsightAgent] Gemini failed for user ${userId}: ${geminiErr.message}`);
+            throw new Error('AI spending analysis unavailable. Please try again in a moment.');
+        }
         cache.set(cacheKey, result, TTL);
         return result;
     }

@@ -63,7 +63,13 @@ Return ONLY valid JSON:
   "insights": ["<insight 1>", "<insight 2>", "<insight 3>"]
 }`;
 
-        const result = await gemini.generateJSON(prompt);
+        let result;
+        try {
+            result = await gemini.generateJSON(prompt);
+        } catch (geminiErr) {
+            console.error(`[BudgetAgent] Gemini failed for user ${userId}: ${geminiErr.message}`);
+            throw new Error('AI budget recommendation unavailable. Please try again in a moment.');
+        }
         cache.set(cacheKey, result, TTL);
         return result;
     }

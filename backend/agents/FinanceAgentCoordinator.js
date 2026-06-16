@@ -67,11 +67,20 @@ class FinanceAgentCoordinator {
      * @returns {Promise<Object>} aggregated financial snapshot
      */
     async _getContext(userId) {
+        if (!userId) throw new Error('userId is required');
+
         const key    = `ctx:${userId}`;
         const cached = cache.get(key);
         if (cached) return cached;
 
-        const data = await financeDataService.getUserFinancialData(userId);
+        let data;
+        try {
+            data = await financeDataService.getUserFinancialData(userId);
+        } catch (dbErr) {
+            console.error(`[Coordinator] DB fetch failed for user ${userId}: ${dbErr.message}`);
+            throw dbErr;
+        }
+
         cache.set(key, data, CONTEXT_TTL);
         return data;
     }

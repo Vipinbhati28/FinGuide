@@ -36,7 +36,16 @@ class AdvisorAgent {
         ];
 
         const session = gemini.startChat(geminiHistory);
-        const result  = await session.sendMessage(message);
+        let result;
+        try {
+            result = await session.sendMessage(message);
+        } catch (geminiErr) {
+            console.error(`[AdvisorAgent] chat failed for user ${userId}: ${geminiErr.message}`);
+            return {
+                reply:     'I\'m having trouble connecting to the AI service right now. Please try again in a moment.',
+                timestamp: new Date().toISOString(),
+            };
+        }
 
         return {
             reply:     result.response.text().trim(),
@@ -96,7 +105,17 @@ Return ONLY valid JSON:
   }
 }`;
 
-        return gemini.generateJSON(prompt);
+        try {
+            return await gemini.generateJSON(prompt);
+        } catch (geminiErr) {
+            console.error(`[AdvisorAgent] voice failed for user ${userId}: ${geminiErr.message}`);
+            return {
+                intent: 'general',
+                response: 'I\'m having trouble connecting to the AI service right now. Please try again.',
+                data: { amount: null, category: null, timeframe: null },
+                action: { type: 'none', route: null, payload: null },
+            };
+        }
     }
 
     // ── Private ───────────────────────────────────────────────────────────────

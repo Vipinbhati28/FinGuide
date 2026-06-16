@@ -43,7 +43,7 @@ class HealthAgent {
         const cached = cache.get(cacheKey);
         if (cached) return cached;
 
-        // Deterministic base — score/grade will never be overridden by AI
+        // Deterministic base — always succeeds (pure arithmetic, no I/O)
         const base = this.algorithmicScore(financialData);
         const d    = financialData;
 
@@ -75,21 +75,38 @@ Return ONLY valid JSON with this exact schema:
   "tips": ["<highly specific tip 1>", "<tip 2>", "<tip 3>", "<tip 4>", "<tip 5>"]
 }`;
 
-        const aiResult = await gemini.generateJSON(prompt);
+        try {
+            const aiResult = await gemini.generateJSON(prompt);
 
-        // Hard-pin algorithmic values — AI can never override them
-        const result = {
-            ...aiResult,
-            score:        base.score,
-            grade:        base.grade,
-            breakdown:    base.breakdown,
-            strengths:    base.strengths,
-            weaknesses:   base.weaknesses,
-            recommendations: base.recommendations,
-        };
+            // Hard-pin algorithmic values — AI can never override them
+            const result = {
+                ...aiResult,
+                score:           base.score,
+                grade:           base.grade,
+                breakdown:       base.breakdown,
+                strengths:       base.strengths,
+                weaknesses:      base.weaknesses,
+                recommendations: base.recommendations,
+            };
 
-        cache.set(cacheKey, result, TTL);
-        return result;
+            cache.set(cacheKey, result, TTL);
+            return result;
+
+        } catch (geminiErr) {
+            // Gemini failed (quota, key error, JSON parse, network).
+            // Fall back to the algorithmic result so the endpoint returns 200.
+            console.error(`[HealthAgent] Gemini enrichment failed for user ${userId}: ${geminiErr.message}`);
+
+            const fallback = {
+                ...base,
+                summary: null,      // frontend must handle null gracefully
+                tips:    base.recommendations,
+                aiError: true,      // flag so frontend can show "AI unavailable" note
+            };
+            // Short TTL on fallback so the next request retries Gemini sooner
+            cache.set(cacheKey, fallback, 60 * 1000);
+            return fallback;
+        }
     }
 }
 
