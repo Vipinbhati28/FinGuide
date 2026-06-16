@@ -87,14 +87,7 @@ class FinanceAgent {
         // Instantiating it once avoids repeated credential validation overhead.
         this._genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
-        /**
-         * gemini-1.5-flash: best balance of speed and quality for structured-JSON
-         * generation. Swap to 'gemini-1.5-pro' for higher accuracy at higher cost/latency.
-         *
-         * NOTE FOR PRODUCTION: Consider using 'gemini-1.5-pro' for the monthly report
-         * (longer, more nuanced) and 'gemini-1.5-flash' for everything else.
-         */
-        this._model = this._genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        this._model = this._genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
         // ── In-Memory Response Cache ─────────────────────────────────────────────
         /**
