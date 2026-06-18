@@ -561,11 +561,16 @@ Advisor Rules:
         // The full conversation context is carried in geminiHistory above.
         const session = this._model.startChat({ history: geminiHistory });
 
-        // _callGemini is not used here because chat uses sendMessage, not generateContent.
-        // This is the ONLY place in FinanceAgent that calls the Gemini SDK directly
-        // without routing through _callGemini. Acceptable because startChat + sendMessage
-        // is a distinct Gemini API surface.
-        const result = await session.sendMessage(message);
+        let result;
+        try {
+            result = await session.sendMessage(message);
+        } catch (geminiErr) {
+            console.error(`[FinanceAgent:chat] Gemini failed for user ${userId}: ${geminiErr.message}`);
+            return {
+                reply: "I'm having trouble connecting to the AI service right now. Please try again in a moment.",
+                timestamp: new Date().toISOString(),
+            };
+        }
         return {
             reply: result.response.text().trim(),
             timestamp: new Date().toISOString(),
