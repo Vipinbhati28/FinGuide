@@ -1,6 +1,6 @@
 # FinGuide — AI-Powered Personal Finance Manager
 
-> **B.Tech Final Year Project** | Full-Stack Web Application  
+> Full-Stack Web Application  
 > Built with React 19, Node.js/Express 5, MongoDB, and Google Gemini AI
 
 ---
