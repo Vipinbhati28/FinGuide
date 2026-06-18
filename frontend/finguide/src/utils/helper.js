@@ -21,7 +21,7 @@ export const addThousandsSeparator = (num) => {
 
     // Convert to integer to remove decimal points
     const integerValue = Math.floor(Number(num));
-    const formattedInteger = integerValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    const formattedInteger = integerValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
     return formattedInteger;
 };

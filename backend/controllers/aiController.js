@@ -21,7 +21,8 @@ function sendError(res, feature, error) {
 
     // Classify to choose HTTP status + user-facing text
     const isNoData = msg.includes('No transactions');
-    const isGemini = msg.includes('GoogleGenerativeAI') ||
+    const isGemini = error?.isAIServiceError ||
+                     msg.includes('GoogleGenerativeAI') ||
                      msg.includes('generativelanguage.googleapis') ||
                      msg.includes('fetch') ||
                      msg.includes('not valid JSON');
