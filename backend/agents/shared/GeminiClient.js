@@ -16,8 +16,8 @@
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-const RETRY_DELAYS = [1000, 2000, 4000]; // ms — 3 attempts total
-const RETRYABLE    = new Set([429, 503]);  // HTTP status codes worth retrying
+const RETRY_DELAYS = [1000, 2000, 4000]; // ms — 3 attempts total (for 503 only)
+const RETRYABLE    = new Set([503]);       // Only retry transient service errors, not quota
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -44,10 +44,26 @@ class GeminiClient {
             } catch (err) {
                 lastError = err;
                 const status = err?.status ?? err?.httpErrorCode ?? 0;
-                const isRetryable = RETRYABLE.has(status) ||
-                    (err.message ?? '').includes('quota') ||
-                    (err.message ?? '').includes('503');
+                const msg    = err.message ?? '';
 
+                // 429 = quota/rate-limit. Google tells us how long to wait.
+                // If the required wait is > 30s, quota won't recover within a
+                // reasonable HTTP timeout — fail immediately instead of burning
+                // retry attempts that will also fail.
+                if (status === 429 || msg.includes('429') || msg.includes('quota')) {
+                    const match = msg.match(/retry in (\d+\.?\d*)s/i);
+                    const waitSec = match ? parseFloat(match[1]) : 60;
+                    if (waitSec > 30) {
+                        console.warn(`[GeminiClient] Quota exceeded — retry in ${waitSec}s (skipping retries)`);
+                        break;
+                    }
+                    const waitMs = Math.ceil(waitSec * 1000) + 500;
+                    console.warn(`[GeminiClient] Rate-limited — waiting ${waitMs}ms then retrying…`);
+                    await sleep(waitMs);
+                    continue; // one retry at the correct delay
+                }
+
+                const isRetryable = RETRYABLE.has(status) || msg.includes('503');
                 if (!isRetryable || attempt === RETRY_DELAYS.length) break;
 
                 const delay = RETRY_DELAYS[attempt];
