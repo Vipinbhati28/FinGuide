@@ -83,7 +83,7 @@ class FinanceAgent {
         }
 
         this._client = new OpenAI({
-            apiKey:  process.env.XAI_API_KEY || '',
+            apiKey:  process.env.XAI_API_KEY || 'not-set',
             baseURL: 'https://api.x.ai/v1',
         });
         this._model = 'grok-3-fast';
