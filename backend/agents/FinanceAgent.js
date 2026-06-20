@@ -39,7 +39,7 @@
 
 'use strict';
 
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const OpenAI = require('openai');
 const financeDataService = require('../services/financeDataService');
 const healthScoreService = require('../services/healthScoreService');
 const moment = require('moment');
@@ -74,20 +74,19 @@ const TTL = {
 class FinanceAgent {
     constructor() {
         // ── Gemini Setup ────────────────────────────────────────────────────────
-        if (!process.env.GEMINI_API_KEY) {
-            // Warn early so the issue is visible at startup, not at first API call.
+        if (!process.env.XAI_API_KEY) {
             console.warn(
-                '[FinanceAgent] GEMINI_API_KEY is not set. ' +
+                '[FinanceAgent] XAI_API_KEY is not set. ' +
                 'All AI features will throw at runtime. ' +
                 'Add it to backend/.env and restart.'
             );
         }
 
-        // Single GoogleGenerativeAI client shared across all methods in this process.
-        // Instantiating it once avoids repeated credential validation overhead.
-        this._genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-
-        this._model = this._genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+        this._client = new OpenAI({
+            apiKey:  process.env.XAI_API_KEY || '',
+            baseURL: 'https://api.x.ai/v1',
+        });
+        this._model = 'grok-3-fast';
 
         // ── In-Memory Response Cache ─────────────────────────────────────────────
         /**
@@ -167,8 +166,11 @@ class FinanceAgent {
      * @throws  on Gemini API error (network, quota, invalid key, etc.)
      */
     async _callGemini(prompt) {
-        const result = await this._model.generateContent(prompt);
-        return result.response.text().trim();
+        const completion = await this._client.chat.completions.create({
+            model:    this._model,
+            messages: [{ role: 'user', content: prompt }],
+        });
+        return completion.choices[0].message.content.trim();
     }
 
     /**
@@ -537,44 +539,31 @@ Advisor Rules:
   - Be encouraging but honest about overspending.`.trim();
         }
 
-        // Build the Gemini history array:
-        //   [system context exchange] + [prior conversation turns]
-        const geminiHistory = [
-            {
-                role: 'user',
-                parts: [{ text: systemPrompt }],
-            },
-            {
-                role: 'model',
-                parts: [{
-                    text: "Understood! I'm FinGuide AI, your personal financial advisor. I have access to your live financial data and I'm ready to give you personalised advice. What would you like to know?",
-                }],
-            },
-            // Map prior turns from internal format to Gemini format
+        // Build OpenAI-format message array: system prompt → prior turns → current message
+        const messages = [
+            { role: 'system', content: systemPrompt },
             ...history.map(msg => ({
-                role: msg.role,          // 'user' or 'model' — matches Gemini's expected values
-                parts: [{ text: msg.content }],
+                role:    msg.role === 'model' ? 'assistant' : msg.role,
+                content: msg.content,
             })),
+            { role: 'user', content: message },
         ];
 
-        // Create a fresh chat session per request (stateless design).
-        // The full conversation context is carried in geminiHistory above.
-        const session = this._model.startChat({ history: geminiHistory });
-
-        let result;
+        let reply;
         try {
-            result = await session.sendMessage(message);
-        } catch (geminiErr) {
-            console.error(`[FinanceAgent:chat] Gemini failed for user ${userId}: ${geminiErr.message}`);
+            const completion = await this._client.chat.completions.create({
+                model:    this._model,
+                messages,
+            });
+            reply = completion.choices[0].message.content.trim();
+        } catch (aiErr) {
+            console.error(`[FinanceAgent:chat] xAI failed for user ${userId}: ${aiErr.message}`);
             return {
-                reply: "I'm having trouble connecting to the AI service right now. Please try again in a moment.",
+                reply:     "I'm having trouble connecting to the AI service right now. Please try again in a moment.",
                 timestamp: new Date().toISOString(),
             };
         }
-        return {
-            reply: result.response.text().trim(),
-            timestamp: new Date().toISOString(),
-        };
+        return { reply, timestamp: new Date().toISOString() };
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
