@@ -16,12 +16,12 @@
 require('dotenv').config();
 
 // ── Startup environment validation ───────────────────────────────────────────
-const REQUIRED_ENV = ['MONGO_URI', 'JWT_SECRET', 'GEMINI_API_KEY'];
+const REQUIRED_ENV = ['MONGO_URI', 'JWT_SECRET', 'OPENROUTER_API_KEY'];
 const missing = REQUIRED_ENV.filter(k => !process.env[k]);
 if (missing.length) {
     console.error(`[startup] ❌  Missing required environment variables: ${missing.join(', ')}`);
     console.error('[startup]     Add them to backend/.env and restart.\n');
-    // Warn but don't exit — allow running without GEMINI_API_KEY in dev
+    // Warn but don't exit — allows running without OPENROUTER_API_KEY in dev
 }
 
 const express      = require('express');
@@ -162,6 +162,6 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`\n✅  FinGuide backend running on port ${PORT}`);
     console.log(`   ENV:     ${process.env.NODE_ENV || 'development'}`);
-    console.log(`   Gemini:  ${process.env.GEMINI_API_KEY ? '✓ configured' : '⚠ not set'}`);
+    console.log(`   OpenRouter: ${process.env.OPENROUTER_API_KEY ? '✓ configured' : '⚠ not set'}`);
     console.log(`   MongoDB: connecting…\n`);
 });

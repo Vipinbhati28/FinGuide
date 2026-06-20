@@ -20,7 +20,7 @@
 
 'use strict';
 
-const FinanceAgent       = require('../agents/FinanceAgent');
+const financeAgent       = require('../services/ai/financeAgent');
 const financeDataService = require('../services/financeDataService');
 const healthScoreService = require('../services/healthScoreService');
 const predictionService  = require('../services/predictionService');
@@ -125,7 +125,7 @@ exports.getHistory = async (req, res) => {
  *
  * 1. Builds financial context from live data.
  * 2. Loads recent history from DB for Gemini context window.
- * 3. Calls FinanceAgent.financialChat() which routes through Gemini.
+ * 3. Calls financeAgent.financialChat() which routes through Gemini.
  * 4. Persists both user message and AI reply to ChatHistory.
  */
 exports.sendMessage = async (req, res) => {
@@ -151,7 +151,7 @@ exports.sendMessage = async (req, res) => {
         }));
 
         // Call Gemini through FinanceAgent with injected context
-        const { reply, timestamp } = await FinanceAgent.financialChat(
+        const { reply, timestamp } = await financeAgent.financialChat(
             userId,
             message.trim(),
             historyForAgent,
@@ -179,7 +179,7 @@ exports.clearHistory = async (req, res) => {
             { $set: { messages: [] } }
         );
         // Also clear FinanceAgent's in-memory cache for this user
-        FinanceAgent.invalidateUser(req.user.id);
+        financeAgent.invalidateUser(req.user.id);
         res.json({ message: 'Chat history cleared.' });
     } catch (error) {
         console.error('[chatController:clearHistory]', error.message);

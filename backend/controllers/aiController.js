@@ -1,18 +1,18 @@
 'use strict';
 
 /**
- * aiController — Thin HTTP adapter for the FinanceAgentCoordinator.
+ * aiController — Thin HTTP adapter for financeAgent (services/ai/financeAgent.js).
  *
  * Responsibilities:
  *   1. Extract and validate HTTP request inputs (params, body, query).
- *   2. Delegate to the appropriate coordinator method.
+ *   2. Delegate to the appropriate financeAgent method.
  *   3. Return the result or a standardised error response.
  *
  * Zero business logic, zero DB queries, zero prompt construction here.
  */
 
-const coordinator = require('../agents/FinanceAgentCoordinator');
-const moment      = require('moment');
+const financeAgent = require('../services/ai/financeAgent');
+const moment       = require('moment');
 const { isValidObjectId } = require('mongoose');
 
 // ── Centralised error handler ─────────────────────────────────────────────────
@@ -21,10 +21,9 @@ function sendError(res, feature, error) {
 
     // Classify to choose HTTP status + user-facing text
     const isNoData = msg.includes('No transactions');
-    const isGemini = error?.isAIServiceError ||
-                     msg.includes('GoogleGenerativeAI') ||
-                     msg.includes('generativelanguage.googleapis') ||
-                     msg.includes('fetch') ||
+    const isAI     = error?.isAIServiceError ||
+                     msg.includes('[OpenRouter]') ||
+                     msg.includes('Non-JSON response') ||
                      msg.includes('not valid JSON');
     const isMongo  = msg.includes('BSON') ||
                      msg.includes('MongoServerError') ||
@@ -35,10 +34,10 @@ function sendError(res, feature, error) {
     console.error(`[AI:${feature}] ${new Date().toISOString()} — ${msg}`);
     if (process.env.NODE_ENV !== 'production') console.error(error?.stack ?? '(no stack)');
 
-    const status  = isNoData ? 404 : isGemini ? 503 : 500;
+    const status  = isNoData ? 404 : isAI ? 503 : 500;
     const message = isNoData
         ? msg
-        : isGemini
+        : isAI
             ? 'AI service temporarily unavailable. Please try again in a moment.'
             : isMongo
                 ? 'Database error. Please try again.'
@@ -68,7 +67,7 @@ exports.getHealthScore = async (req, res) => {
     if (!validateUser(req, res)) return;
     try {
         console.log(`[AI:healthScore] user=${req.user.id}`);
-        res.json(await coordinator.healthScore(String(req.user.id)));
+        res.json(await financeAgent.healthScore(String(req.user.id)));
     } catch (error) { sendError(res, 'healthScore', error); }
 };
 
@@ -77,7 +76,7 @@ exports.getBudgetRecommendation = async (req, res) => {
     if (!validateUser(req, res)) return;
     try {
         console.log(`[AI:budgetAdvice] user=${req.user.id}`);
-        res.json(await coordinator.generateBudgetAdvice(String(req.user.id)));
+        res.json(await financeAgent.generateBudgetAdvice(String(req.user.id)));
     } catch (error) { sendError(res, 'budgetAdvice', error); }
 };
 
@@ -86,7 +85,7 @@ exports.getSpendingAnalysis = async (req, res) => {
     if (!validateUser(req, res)) return;
     try {
         console.log(`[AI:spendingAnalysis] user=${req.user.id}`);
-        res.json(await coordinator.analyzeSpendingPatterns(String(req.user.id)));
+        res.json(await financeAgent.analyzeSpendingPatterns(String(req.user.id)));
     } catch (error) { sendError(res, 'spendingAnalysis', error); }
 };
 
@@ -95,7 +94,7 @@ exports.getExpensePrediction = async (req, res) => {
     if (!validateUser(req, res)) return;
     try {
         console.log(`[AI:expensePrediction] user=${req.user.id}`);
-        res.json(await coordinator.predictExpenses(String(req.user.id)));
+        res.json(await financeAgent.predictExpenses(String(req.user.id)));
     } catch (error) { sendError(res, 'predictExpenses', error); }
 };
 
@@ -108,7 +107,7 @@ exports.chat = async (req, res) => {
     if (!Array.isArray(history)) return res.status(400).json({ message: 'history must be an array.' });
     try {
         console.log(`[AI:chat] user=${req.user.id} msgLen=${message.trim().length}`);
-        const result = await coordinator.financialChat(String(req.user.id), message.trim(), history);
+        const result = await financeAgent.financialChat(String(req.user.id), message.trim(), history);
         res.json(result);
     } catch (error) { sendError(res, 'chat', error); }
 };
@@ -121,7 +120,7 @@ exports.processVoice = async (req, res) => {
     if (!transcript?.trim()) return res.status(400).json({ message: 'transcript is required.' });
     try {
         console.log(`[AI:voice] user=${req.user.id}`);
-        const result = await coordinator.processVoiceCommand(String(req.user.id), transcript.trim());
+        const result = await financeAgent.processVoiceCommand(String(req.user.id), transcript.trim());
         res.json(result);
     } catch (error) { sendError(res, 'voice', error); }
 };
@@ -135,7 +134,7 @@ exports.getMonthlyReport = async (req, res) => {
     if (month < 1 || month > 12) return res.status(400).json({ message: 'month must be 1–12.' });
     try {
         console.log(`[AI:monthlyReport] user=${req.user.id} period=${year}-${month}`);
-        const result = await coordinator.generateMonthlyReport(String(req.user.id), year, month);
+        const result = await financeAgent.generateMonthlyReport(String(req.user.id), year, month);
         res.json(result);
     } catch (error) { sendError(res, 'monthlyReport', error); }
 };
@@ -150,7 +149,7 @@ exports.downloadMonthlyReport = async (req, res) => {
 
     try {
         console.log(`[AI:downloadPDF] user=${req.user.id} period=${year}-${month}`);
-        const { pdf, report } = await coordinator.generateMonthlyReportPDF(
+        const { pdf, report } = await financeAgent.generateMonthlyReportPDF(
             String(req.user.id), year, month
         );
         const filename = `FinGuide-Report-${report.rawData?.reportMonth?.replace(' ', '-') ?? `${year}-${month}`}.pdf`;
@@ -172,6 +171,6 @@ exports.runAllAnalysis = async (req, res) => {
     if (!validateUser(req, res)) return;
     try {
         console.log(`[AI:runAll] user=${req.user.id}`);
-        res.json(await coordinator.runAllAnalysis(String(req.user.id)));
+        res.json(await financeAgent.runAllAnalysis(String(req.user.id)));
     } catch (error) { sendError(res, 'runAll', error); }
 };
